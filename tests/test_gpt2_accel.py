@@ -41,7 +41,7 @@ from gpt2_arch.gpt2 import (
     MaxGPT2Model,
     causal_mask,
 )
-from max._interpreter_ops import GC_FAMILIES, adopted_from_manifest
+from max._interpreter_ops import GC_FAMILIES, adopted_from_store
 from max.driver import CPU, Accelerator, accelerator_api, accelerator_count
 from max.dtype import DType
 from max.experimental.nn import Module
@@ -99,15 +99,12 @@ def _require_warm_adoption() -> None:
     compiles, so this asserts adoption directly, as in test_interp_warm_cache
     and test_interpreter_ops_gpu.
     """
-    if _SKIP_REASON is not None or not os.environ.get("XARCH_WARM_RLOCATION"):
+    if _SKIP_REASON is not None or not os.environ.get("MAX_EAGER_WARM_STORE"):
         return
-    unadopted = [
-        f.name for f in GC_FAMILIES if not adopted_from_manifest(f.name)
-    ]
+    unadopted = [f.name for f in GC_FAMILIES if not adopted_from_store(f.name)]
     if unadopted:
         raise RuntimeError(
-            f"eager-GC warm is wired but {unadopted} did not adopt from the"
-            " manifest; a silent cold-compile fallback."
+            f"eager-GC warm is wired but {unadopted} did not load from it"
         )
 
 
