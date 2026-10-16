@@ -23,6 +23,24 @@ from gpt2_arch.gpt2 import (
 )
 from max.driver import CPU
 from max.dtype import DType
+
+
+def _tiny_config() -> GPT2Config:
+    """A minimal config for the shape tests.
+
+    The shape tests assert output shapes against the config's own fields,
+    not against GPT-2's real dimensions, and a full-size forward (12
+    layers, 50k vocab) dominates the test's runtime (MODELS-1493).
+    """
+    return GPT2Config(
+        vocab_size=64,
+        n_positions=32,
+        n_embd=16,
+        n_layer=2,
+        n_head=2,
+    )
+
+
 from max.experimental.tensor import Tensor
 
 
@@ -61,8 +79,8 @@ class TestGPT2MLP:
 
     def test_forward_pass_shape(self) -> None:
         """Test that GPT2MLP produces correct output shape."""
-        config = GPT2Config()
-        mlp = GPT2MLP(intermediate_size=3072, config=config)
+        config = _tiny_config()
+        mlp = GPT2MLP(intermediate_size=4 * config.n_embd, config=config)
 
         # Create input tensor [batch=2, seq=10, embd=768]
         hidden_states = Tensor.ones([2, 10, config.n_embd], dtype=DType.float32)
@@ -160,7 +178,7 @@ class TestGPT2MultiHeadAttention:
 
     def test_forward_pass_shape(self) -> None:
         """Test that attention forward pass produces correct output shape."""
-        config = GPT2Config()
+        config = _tiny_config()
         attn = GPT2MultiHeadAttention(config)
 
         hidden_states = Tensor.ones([2, 10, config.n_embd], dtype=DType.float32)
@@ -212,7 +230,7 @@ class TestGPT2Block:
 
     def test_forward_pass_shape(self) -> None:
         """Test that GPT2Block produces correct output shape."""
-        config = GPT2Config()
+        config = _tiny_config()
         block = GPT2Block(config)
 
         hidden_states = Tensor.ones([2, 10, config.n_embd])
@@ -226,7 +244,7 @@ class TestMaxGPT2Model:
 
     def test_initialization(self) -> None:
         """Test that MaxGPT2Model initializes correctly."""
-        config = GPT2Config()
+        config = _tiny_config()
         model = MaxGPT2Model(config)
         assert model.wte is not None
         assert model.wpe is not None
@@ -235,7 +253,7 @@ class TestMaxGPT2Model:
 
     def test_forward_pass_shape(self) -> None:
         """Test that MaxGPT2Model produces correct output shape."""
-        config = GPT2Config()
+        config = _tiny_config()
         model = MaxGPT2Model(config)
 
         batch_size, seq_len = 2, 10
@@ -255,7 +273,7 @@ class TestMaxGPT2LMHeadModel:
 
     def test_initialization(self) -> None:
         """Test that MaxGPT2LMHeadModel initializes correctly."""
-        config = GPT2Config()
+        config = _tiny_config()
         model = MaxGPT2LMHeadModel(config)
         assert model.config == config
         assert model.transformer is not None
@@ -263,7 +281,7 @@ class TestMaxGPT2LMHeadModel:
 
     def test_forward_pass_shape(self) -> None:
         """Test that MaxGPT2LMHeadModel produces correct output shape."""
-        config = GPT2Config()
+        config = _tiny_config()
         model = MaxGPT2LMHeadModel(config)
 
         batch_size, seq_len = 2, 10
