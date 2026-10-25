@@ -38,10 +38,15 @@ test = "pytest tests/ -v"
 [target.osx-arm64.tasks]
 # On macOS (Apple Silicon), force CPU: the Metal GPU backend produces incorrect
 # logits for sequence lengths > 3 due to a dynamic-shape compiler issue.
-serve = "max serve --custom-architectures gpt2_arch --model openai-community/gpt2 --devices cpu --no-enable-overlap-scheduler --no-device-graph-capture --force"
+# SDKROOT pins an older SDK: the active macOS 27 SDK ships TAPI v4 stubs with
+# the new `arm64e.x1-macos` token that Mojo's bundled linker cannot parse
+# (`ld: tapi error: malformed file`), which breaks the on-demand compile of
+# `max/_kv_cache_ops`. The 26.5 SDK is TAPI v4 too but lacks that token, so it
+# links cleanly. Keep this in sync with the SDKs available on the machine.
+serve = "SDKROOT=/Library/Developer/CommandLineTools/SDKs/MacOSX26.5.sdk max serve --custom-architectures gpt2_arch --model openai-community/gpt2 --devices cpu --no-enable-overlap-scheduler --no-device-graph-capture --force"
 
 [dependencies]
-modular = ">=26.4.0.dev2026050805"
+modular = "==26.8.0.dev2026102405"
 transformers = "*" # Use MAX's version constraint
 pytorch = ">=2.8.0,<3"
 numpy = ">=2.3.3,<3"
